@@ -1,0 +1,363 @@
+<!DOCTYPE html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Golfer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<style>
+:root{--bg:#0d1311;--card:#1a2320;--ink:#e9f0ec;--mut:#9aada3;--line:#2b3a34;--g:#10b981;--lime:#10b981;--acc:#1f3029;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px);background:#0d1311}
+body{background:var(--bg);color:var(--ink);font-family:'Plus Jakarta Sans',system-ui,sans-serif;margin:0}
+button,select,textarea,input{font-family:inherit}button{color:inherit}
+.c{background:var(--card);border:1px solid var(--line);border-radius:1.25rem;box-shadow:0 4px 18px rgba(0,0,0,.35)}
+.mut,.sub{color:var(--mut)}
+.btn{background:#2e7d32;color:#fff;border-radius:.9rem;padding:.7rem 1.1rem;font-weight:700;display:inline-block;text-align:center}
+.btn.o{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn[disabled]{opacity:.4;pointer-events:none}
+.chip{border:1px solid var(--line);border-radius:999px;padding:.4rem .95rem;font-weight:600;background:var(--card);color:var(--ink);white-space:nowrap;font-size:.9rem}
+.chip.on{background:#2e7d32;color:#fff;border-color:#10b981}
+.inp{width:100%;border:1px solid var(--line);background:#121816;color:var(--ink);border-radius:.85rem;padding:.75rem .95rem;font-size:1rem}
+.inp::placeholder{color:#6f8278}
+.btn:focus-visible,.chip:focus-visible,.inp:focus-visible,.nav button:focus-visible,a:focus-visible{outline:3px solid #10b981;outline-offset:2px}
+.nav{position:fixed;left:0;right:0;bottom:0;background:#121816;border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);z-index:20}
+.nav button{flex:1;padding:.5rem 0;font-size:.68rem;color:var(--mut);font-weight:600;transition:color .2s;border-top:3px solid transparent}
+.nav button.on{color:#10b981;font-weight:800;border-top-color:#10b981}.nav span{display:block;font-size:1.2rem;transition:transform .25s}.nav button.on span{transform:translateY(-2px) scale(1.12)}
+.bar{height:.55rem;border-radius:99px;background:#2b3a34;overflow:hidden}.bar i{display:block;height:100%;background:#10b981;border-radius:99px;transition:width .7s cubic-bezier(.2,.8,.2,1)}
+.err{color:#f87171;font-size:.9rem;font-weight:600}
+.pcard{background:linear-gradient(#1a2320,#1a2320) padding-box,linear-gradient(135deg,#10b981,#2e7d32 55%,#2b3a34) border-box;border:1.5px solid transparent;border-radius:1.5rem;box-shadow:0 8px 26px rgba(0,0,0,.4)}
+.tile{background:#121816;border:1px solid var(--line);border-radius:1rem}
+.pill{background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.55);color:#10b981;border-radius:99px;padding:.2rem .7rem;font-size:.72rem;font-weight:700;white-space:nowrap}
+.tag{background:#1f4aa8;color:#fff;font-weight:800;font-size:.7rem;padding:.3rem .6rem;border-radius:.2rem;display:inline-block}
+.trophy{background:#1f4aa8;width:3.6rem;min-height:3.6rem;display:grid;place-items:center;color:#fff;font-size:1.6rem;flex:none}
+@keyframes up{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes zoom{from{transform:scale(.3);opacity:0}to{transform:scale(1);opacity:1}}
+.fx>*{animation:up .4s cubic-bezier(.2,.8,.2,1) both}.fx>*:nth-child(2){animation-delay:.05s}.fx>*:nth-child(3){animation-delay:.1s}.fx>*:nth-child(4){animation-delay:.15s}
+.zoomin{animation:zoom .6s cubic-bezier(.2,.8,.2,1) both}
+.c,.btn,.chip{transition:transform .15s,box-shadow .25s,background .2s}.h:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(0,0,0,.5)}.btn:active,.chip:active,.h:active{transform:scale(.97)}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style></head><body>
+<div id="app" class="mx-auto max-w-3xl px-4 pb-28 pt-4"></div>
+<script>
+const mem={},st={get(k){try{return localStorage.getItem(k)}catch(e){return mem[k]??null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){mem[k]=v}},del(k){try{localStorage.removeItem(k)}catch(e){delete mem[k]}}};
+const users=()=>JSON.parse(st.get('gf_users')||'[]'),hash=p=>btoa(unescape(encodeURIComponent(p)));
+const save=u=>{const a=users().filter(x=>x.username!==u.username);a.push(u);st.set('gf_users',JSON.stringify(a))};
+let U=null,S={tab:'home',tr:'std',w:'long',f:'all',auth:'login',step:1,tmp:null,g:null,rep:null,err:'',msg:'',ed:null,sel:0,fx:true,busy:false};
+const init=u=>{if(u){u.custom=u.custom||[];u.rounds=u.rounds||[];u.notes=u.notes||[]}return u};
+{const s=st.get('gf_ses');if(s)U=init(users().find(u=>u.username===s))||null}
+const $=s=>document.querySelector(s),esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
+const tier=()=>U.hcp==null?null:U.hcp<=10?'Avanzato':U.hcp<=20?'Intermedio':'Base';
+const go=t=>{S.tab=t;S.err='';S.cf=null;S.fx=true;R();scrollTo(0,0)};
+
+/* ---------- dati ---------- */
+const P=[4,4,3,5,4,4,3,4,5,4,3,4,5,4,4,3,4,5];
+const CN=[["Ca' Amata","Veneto"],["Golf Club Padova","Veneto"],["Villa Condulmer","Veneto"],["Asolo Golf Club","Veneto"],["Golf Club Verona","Veneto"],["Golf Club Venezia","Veneto"],["Chervò Golf San Vigilio","Pozzolengo (Garda)"],["Golf Club Montecchia","Veneto"],["Golf Club Frassanelle","Veneto"],["Golf Club Colli Berici","Veneto"],["Golf Club Cansiglio","Veneto"],["Golf Club Albarella","Veneto"],["Jesolo Golf Club","Veneto"],["Cà della Nave Golf Club","Veneto"],["Terme di Galzignano Golf","Veneto"],["Cortina Golf Club","Veneto"],["Asiago Golf Club","Veneto"],["Campo generico 18 buche","Schema"]];
+const C=CN.map((c,i)=>({n:c[0],r:c[1],p:P.map((_,j)=>P[(j+i*5)%18])}));
+const D=(t,o,d,k)=>({t,o,d:d.split('|'),k:k.split('|')});
+const W={
+long:[D(`Gate Drill – controllo del piano`,`Chiudere la faccia in impatto per ridurre hook e slice.`,`Metti due tee alla larghezza della testa del bastone, 10 cm davanti alla palla.|Colpisci 10 drive passando nel varco senza toccarli.|Chiudi con 5 palle a piena velocità, senza varco.`,`Presa leggera: 4 su 10.|Mantieni il finale per 3 secondi.`),
+D(`Fairway Finder – 14 palle`,`Costruire un tee shot affidabile sotto pressione.`,`Scegli un corridoio largo circa 30 m.|Colpisci 14 palle, ognuna con la routine completa.|Segna i fairway presi e batti il record.`,`Mira a un punto piccolo, non al fairway.|Usa meno bastone se la buca è stretta.`),
+D(`Tempo 3:1`,`Ritmo fluido per distanza senza sforzo.`,`Conta “uno-due-tre” in salita e “uno” in discesa.|15 palle al 70% della velocità.|Sali all'85% mantenendo il conteggio.`,`Mani veloci, spalle calme.|Usa un metronomo a 60 bpm.`),
+D(`Piedi uniti`,`Migliorare equilibrio e contatto centrato.`,`10 mezzi swing con i piedi a contatto.|10 swing con stance normale.|5 drive mantenendo lo stesso equilibrio.`,`Finisci senza fare passi.|Parti al 60% della velocità.`),
+D(`Asta di allineamento sul piano`,`Trovare un piano di swing ripetibile.`,`Un'asta sulla linea palla-bersaglio, una lungo le punte dei piedi.|10 swing lenti con l'asta del bastone parallela a metà salita.|10 palle mantenendo la sensazione.`,`Fai un video da dietro una volta.|Non forzare il piano con le braccia.`),
+D(`Asciugamano sotto le ascelle`,`Mantenere braccia e corpo connessi.`,`Infila un asciugamano sotto entrambe le ascelle.|10 mezzi wedge senza farlo cadere.|Passa al ferro 7 e a 5 drive.`,`Ruota il petto, non solo le braccia.|Swing più corto, contatto migliore.`),
+D(`Pump Drill – transizione`,`Imparare la partenza dal basso della discesa.`,`Sali in cima e fermati.|Pompa due volte fino ai fianchi sentendo le anche guidare.|Colpisci al terzo movimento, 10 ripetizioni.`,`Peso sul piede avanti per primo.|Gomito dietro vicino al fianco.`),
+D(`Linea di impatto`,`Colpire il centro della faccia e migliorare il lancio.`,`Traccia una linea nell'erba e posiziona la palla su di essa.|10 colpi spazzolando la linea dopo la palla.|Spruzza la faccia e controlla i segni.`,`Driver: palla in linea col tallone avanti.|Tee: metà palla sopra la faccia.`),
+D(`Scala del drive`,`Allenare distanza e direzione insieme.`,`Fissa bersagli a 150, 180 e 210 m.|3 palle per ogni gradino, sali solo se una finisce nel corridoio.|1 punto per palla nel corridoio.`,`Cambia bastone, non la velocità.|20 secondi tra una palla e l'altra.`),
+D(`Passo in avanti`,`Trasferire il peso sul lato avanti.`,`10 palle facendo un passo col piede dietro dopo l'impatto.|10 palle senza passo mantenendo lo stesso finale.|5 palle a piena velocità.`,`Cintura verso il bersaglio.|Testa dietro la palla all'impatto.`)],
+short:[D(`Scala dei putt`,`Controllo della distanza sul green.`,`Tee a 3, 6, 9, 12 e 15 m.|2 palle per ogni distanza, fermandole entro un putter oltre la buca.|Obiettivo: 7 su 10.`,`Guarda la buca durante le prove.|Prima la velocità, poi la linea.`),
+D(`Cerchio da 1,2 m`,`Imbucare i putt corti quando conta.`,`Disponi 6 palle in cerchio a 1,2 m dalla buca.|Imbuca tutte e 6 di fila; riparti dopo un errore.|Chiudi con 3 giri puliti.`,`Stessa routine ogni putt.|Accelera attraverso la palla.`),
+D(`Up & Down`,`Salvare il par intorno al green.`,`Lascia 9 palle intorno al green in lie diversi.|Chip e putt per ciascuna; conta gli up&down.|Batti il record ogni settimana.`,`Scegli prima il punto di atterraggio.|Usa il minor loft possibile.`),
+D(`Putting Gate`,`Squadrare traiettoria e faccia del putter.`,`Due tee appena più larghi della testa del putter.|15 putt da 1,5 m attraverso il varco.|Ripeti da 3 m.`,`Spalle a pendolo, polsi fermi.|Occhi sopra la palla.`),
+D(`Lag Putt con asciugamano`,`Ridurre i tre putt dalla distanza.`,`Asciugamano 1 m oltre una buca a 12–15 m.|10 putt per fermarsi sull'asciugamano.|1 punto per palla nel bersaglio.`,`Leggi la pendenza da dietro.|Colpo più lungo e lento.`),
+D(`Chip a una mano`,`Sentire il rilascio e il ritmo del bastone.`,`10 chip con la sola mano avanti.|10 con la sola mano dietro.|10 con due mani mantenendo la sensazione.`,`Palla indietro, peso avanti.|Swing corto, contatto deciso.`),
+D(`Chip su punto di atterraggio`,`Controllare volo e rotolamento.`,`Asciugamano a 2 m dentro il green.|10 chip col ferro 9 atterrando sull'asciugamano.|Ripeti col sand wedge e confronta il rotolamento.`,`Decidi il rapporto volo/rotolo prima.|Stessa posizione di palla.`),
+D(`Linea nel bunker`,`Uscire dalla sabbia con costanza.`,`Traccia una linea nella sabbia, palla davanti.|Colpisci la linea, non la palla, 10 volte.|5 colpi verso un bersaglio.`,`Faccia aperta e swing deciso.|Finale alto.`),
+D(`Putt a orologio`,`Fiducia dal metro.`,`8 palle attorno alla buca a 1 m.|Imbuca 8 di fila; riparti dopo un errore.|Passa a 1,5 m.`,`Stessa routine pre-putt.|Guarda la buca dopo il colpo.`),
+D(`Chip con tre bastoni`,`Capire come il loft cambia il rotolamento.`,`5 palle con ferro 8, ferro 9 e sand wedge verso la stessa buca.|Annota quanto rotolano.|Gioca 9 buche scegliendo il bastone per ogni lie.`,`Meno loft, più rotolamento.|Adatta il bastone alla velocità del green.`)],
+app:[D(`Distanze wedge a orologio`,`Conoscere quanto vola ogni wedge.`,`5 palle per 7:30, 9:00 e 10:30 di backswing.|Annota il carry medio.|Scrivi i numeri sulla scorecard.`,`Impegnati sul numero, mai rallentare.|Ritesta ogni mese.`),
+D(`Pitch su zona di atterraggio`,`Controllare traiettoria e spin da 30–60 m.`,`Asciugamano a 25 m: 10 palle sopra.|Ripeti con volo più basso.|5 colpi verso una bandiera.`,`Palla indietro per basso, avanti per alto.|Ruota il petto, braccia connesse.`),
+D(`Par 18 approcci`,`Allenare i colpi che trovi in campo.`,`Scegli 9 bersagli e distanze.|Ogni palla una volta con routine completa.|2 punti green, 1 frangia, 0 errore.`,`Mira al centro del green.|Un bastone in più per bandiere in salita.`),
+D(`Controllo a mezzo swing`,`Affinare i wedge sulle medie distanze.`,`10 palle con mani all'altezza dei fianchi.|Misura il carry di ognuna.|Ripeti con un wedge meno aperto.`,`Parte bassa del corpo tranquilla.|Stesso ritmo per ogni lunghezza.`),
+D(`Scala delle traiettorie`,`Imparare volo basso, medio e alto.`,`5 basse, 5 medie, 5 alte verso la stessa bandiera a 40 m.|Cambia posizione della palla e finale, non velocità.|Annota la differenza di carry.`,`Basso: palla indietro, mani avanti.|Alto: palla avanti, finale completo.`),
+D(`Cerchio bersaglio a 20 m`,`Atterrare dentro un'area controllata.`,`Segna un cerchio di 3 m a 20 m.|10 pitch; conta quelli nel cerchio.|Ripeti a 30 m.`,`Guarda il punto di atterraggio.|Sfiora l'erba, non scavare.`),
+D(`Test dei gap`,`Riempire i vuoti di distanza tra i wedge.`,`5 palle per wedge a swing pieno.|Annota il carry medio.|Individua gap sopra i 12 m e pianifica il rimedio.`,`Usa un telemetro.|Testa in giornata senza vento.`),
+D(`Pitch sopra la sacca`,`Pitch alti sopra un ostacolo.`,`Sacca a 3 m davanti a te.|10 palle sopra la sacca verso un bersaglio a 15 m.|Avvicina la sacca per altre 5.`,`Stance aperta, faccia leggermente aperta.|Accelera attraverso la palla.`),
+D(`Pitch da lie in pendenza`,`Gestire pendenze in campo.`,`Trova lie in salita, discesa e laterale.|5 pitch da ciascuno verso un bersaglio.|Adatta posizione palla e stance.`,`Spalle parallele alla pendenza.|Aspettati una direzione diversa.`),
+D(`Pitch sotto pressione`,`Rendere quando conta.`,`9 palle verso 3 bandiere.|Entro 3 m +1 punto; errore −1.|Obiettivo: 5 o più punti.`,`Stessa routine per ogni palla.|Espira prima dello swing.`)]};
+const WN={long:'Gioco Lungo',short:'Gioco Corto',app:'Approcci'};
+const FED='https://www.federgolf.it/attivita-agonistica/gare/';
+const E=[['2026-10-15',`CAMPIONATO NAZIONALE RAGAZZE MATCH PLAY - TROFEO ROBERTA BERTOTTO`,'CAMPIONATI NAZIONALI','AMBROSIANO','n'],['2026-10-15',`CAMPIONATO NAZIONALE RAGAZZI MATCH PLAY - TROFEO ANDREA BROTTO`,'CAMPIONATI NAZIONALI','VILLA PARADISO SSD','n'],['2026-10-17',`CAMPIONATO REGIONALE VENETO INDIVIDUALE - FEMMINILE`,'CAMPIONATI REGIONALI',`CA' AMATA`,'r'],['2026-10-17',`CAMPIONATO REGIONALE VENETO INDIVIDUALE - MASCHILE`,'CAMPIONATI REGIONALI',`CA' AMATA`,'r'],['2026-10-17',`CAMPIONATO TOSCANO INDIVIDUALE-MEMORIAL STEFANO ESENTE - FEMMINILE`,'CAMPIONATI REGIONALI','RIVA TOSCANA','r'],['2026-10-17',`CAMPIONATO TOSCANO INDIVIDUALE-MEMORIAL STEFANO ESENTE - MASCHILE`,'CAMPIONATI REGIONALI','RIVA TOSCANA','r'],['2026-10-23',`CITTA' DI PERUGIA - FEMMINILE- GARA A REGOLAMENTO SPECIALE`,'GARE NAZIONALI 54/54','PERUGIA','n'],
+['2026-10-24','TROFEO GES GOLF - TAPPA AUTUNNALE','CIRCUITO GES GOLF','VILLA CONDULMER','g',1],['2026-10-25',`COPPA D'AUTUNNO - 18 BUCHE STABLEFORD`,'GARE REGIONALI','GOLF CLUB PADOVA','r',1],['2026-10-31','TROFEO GIOVANILE REGIONALE VENETO','CAMPIONATI REGIONALI','ASOLO GOLF CLUB','g',1],['2026-11-01','GARA SOCIALE DI NOVEMBRE','GARE AMATORI','GOLF CLUB VERONA','a',1],['2026-11-07','GARA NAZIONALE 36 BUCHE','GARE NAZIONALI 36/36','GOLF CLUB MONTECCHIA','n',1],['2026-11-08','MEMORIAL STABLEFORD AMATORI','GARE AMATORI','GOLF CLUB VENEZIA','a',1],['2026-11-14','TROFEO GES GOLF - UNDER 14','CIRCUITO GES GOLF','GOLF CLUB FRASSANELLE','g',1],['2026-11-21','GES GOLF - FINALE GIOVANILE','CIRCUITO GES GOLF','CHERVÒ GOLF SAN VIGILIO','g',1],['2026-11-22','COPPA DEL PRESIDENTE','GARE REGIONALI','GOLF CLUB COLLI BERICI','r',1],['2026-11-28','CAMPIONATO REGIONALE A SQUADRE','CAMPIONATI REGIONALI','JESOLO GOLF CLUB','r',1],['2026-12-05','FINALE ORDINE DI MERITO AMATORI','GARE AMATORI','GOLF CLUB ALBARELLA','a',1],['2026-12-12','TROFEO DI NATALE - 9 BUCHE','GARE AMATORI','CÀ DELLA NAVE GOLF CLUB','a',1],['2027-03-13','APERTURA STAGIONE - GARA NAZIONALE','GARE NAZIONALI 54/54','TERME DI GALZIGNANO','n',1],['2027-03-27','TROFEO GES GOLF - TAPPA DI PRIMAVERA','CIRCUITO GES GOLF','GOLF CLUB CANSIGLIO','g',1],['2027-04-10','CAMPIONATO REGIONALE MATCH PLAY','CAMPIONATI REGIONALI','CORTINA GOLF CLUB','r',1],['2027-05-01','COPPA ITALIA UNDER 18','CAMPIONATI NAZIONALI','ASIAGO GOLF CLUB','n',1]];
+const FG={all:'Tutti',g:'Giovanili',n:'Nazionali',r:'Regionali',a:'Amatori'};
+
+/* ---------- geometria buca ---------- */
+function geo(ci,h){const par=C[ci].p[h],s=ci*18+h+3;let dl=par==3?0:[0,-1,1,0,1,-1][s%6];if(ci==0&&h==0)dl=1;/* Ca' Amata 1: dogleg a destra */
+const b=dl||par==3?0:((s*7)%5-2)*14,sd=s%2?1:-1,tx=100-dl*24,g={x:100+(dl?dl*46:b),y:par==3?90:par==4?58:36},c=dl?{x:tx,y:par==5?140:165}:{x:100+b*2.2,y:190};
+const m={par,dl,sd,t:{x:tx,y:312},g,c,k:dl?.5:0,len:par==3?120+(s%4)*20:par==4?330+(s%6)*15:470+(s%5)*15};m.a=dl?{x:tx,y:312-(312-c.y)*.9}:m.t;
+const q=bez(.55,m),q1=bez(.45,m),q2=bez(.72,m);m.w={x:q.x+sd*62,y:q.y+(s%3)*8};
+m.bk=[[q1.x-sd*38,q1.y,9,12],[q2.x+sd*38,q2.y,8,11],[g.x-24,g.y+14,9,6],[g.x+24,g.y+4,8,6]];
+const pp=[];for(let t=0;t<=1;t+=.04)pp.push(bez(t,m));pp.push(g);
+m.tr=[];for(let i=1;i<14;i++){const t=i/14,a=bez(t,m),z=bez(Math.min(1,t+.01),m),dx=z.x-a.x,dy=z.y-a.y,L=Math.hypot(dx,dy)||1;
+for(const k of[-1,1])for(const r2 of[0,1]){if((s+i*(r2+2)+k+3)%3==0)continue;const off=40+r2*15+((s+i*3)%4)*4,x=a.x-k*dy/L*off,y=a.y+k*dx/L*off;
+if(x<7||x>193||y<7||y>335||Math.hypot(x-g.x,y-g.y)<30||Math.hypot(x-m.t.x,y-m.t.y)<22||((x-m.w.x)/28)**2+((y-m.w.y)/36)**2<1||pp.some(p=>Math.hypot(x-p.x,y-p.y)<34))continue;m.tr.push([x,y,6+(s*i+r2)%3])}}return m}
+const bez=(t,m)=>{if(t<m.k){const u=t/m.k;return{x:m.t.x+(m.a.x-m.t.x)*u,y:m.t.y+(m.a.y-m.t.y)*u}}const w=(t-m.k)/(1-m.k),u=1-w;return{x:u*u*m.a.x+2*u*w*m.c.x+w*w*m.g.x,y:u*u*m.a.y+2*u*w*m.c.y+w*w*m.g.y}};
+const pth=m=>m.dl?`M${m.t.x} ${m.t.y}L${m.a.x} ${m.a.y}Q${m.c.x} ${m.c.y} ${m.g.x} ${m.g.y}`:`M${m.t.x} ${m.t.y}Q${m.c.x} ${m.c.y} ${m.g.x} ${m.g.y}`;
+function classify(x,y,m){if(Math.hypot(x-m.g.x,y-m.g.y)<=19)return'G';if(((x-m.w.x)/22)**2+((y-m.w.y)/30)**2<=1)return'W';if(m.bk.some(k=>((x-k[0])/k[2])**2+((y-k[1])/k[3])**2<=1))return'B';
+let d=1e9,p;for(let t=0;t<=1;t+=.02){const q=bez(t,m),e=Math.hypot(x-q.x,y-q.y);if(e<d){d=e;p=q}}return d<=24?'F':x<p.x?'L':'R'}
+const RN={F:'Fairway',L:'Rough sinistra',R:'Rough destra',B:'Bunker',W:'Hazard acqua',G:'Green'};
+function stats(r,ci){let fe=0,fh=0,ml=0,mr=0,bk=0,wt=0,ge=0,gh=0,hl=0;for(let h=0;h<18;h++){const sh=r[h]?.shots;if(!sh||!sh.length)continue;hl++;const par=C[ci].p[h],gi=sh.findIndex(s=>s.res=='G');
+if(par>3){fe++;const k=sh[0].res;if(k=='F')fh++;else if(k=='L')ml++;else if(k=='R')mr++;else if(k=='B')bk++;else if(k=='W')wt++}
+if(gi>=0||sh.length>=par-2){ge++;if(gi>=0&&gi+1<=par-2)gh++}}
+const pc=(a,b)=>b?Math.round(a/b*100):0;return{fir:pc(fh,fe),gir:pc(gh,ge),L:pc(ml,fe),R:pc(mr,fe),B:pc(bk,fe),W:pc(wt,fe),fe,ge,fh,gh,holes:hl}}
+
+/* ---------- autenticazione ---------- */
+function authView(){const l=S.auth=='login';
+return`<div class="pcard p-7 mb-5"><div class="text-4xl font-extrabold">Golfer</div><p class="sub mt-1">Allenati meglio. Registra ogni buca. Conosci il tuo gioco.</p></div>
+<div class="flex gap-2 mb-4"><button class="chip ${l?'on':''}" onclick="S.auth='login';S.err='';R()">Accedi</button><button class="chip ${!l?'on':''}" onclick="S.auth='signup';S.step=1;S.err='';R()">Crea account</button></div>
+<div class="c p-5 space-y-3">${S.err?`<div class="err" role="alert">${S.err}</div>`:''}${l?`
+<label class="block"><span class="mut text-sm">Nome utente o email</span><input id="li" class="inp" autocomplete="username"></label>
+<label class="block"><span class="mut text-sm">Password</span><input id="lp" type="password" class="inp" autocomplete="current-password"></label>
+<button class="btn w-full" onclick="login()">Accedi</button>`:S.step==1?`
+<label class="block"><span class="mut text-sm">Email</span><input id="se" type="email" class="inp" value="${esc(S.tmp?.email||'')}"></label>
+<label class="block"><span class="mut text-sm">Nome utente</span><input id="su" class="inp" value="${esc(S.tmp?.username||'')}"></label>
+<label class="block"><span class="mut text-sm">Password (almeno 6 caratteri)</span><input id="sp" type="password" class="inp"></label>
+<label class="block"><span class="mut text-sm">Conferma password</span><input id="sc" type="password" class="inp"></label>
+<button class="btn w-full" onclick="signup1()">Invia codice di verifica</button>`:`
+<div class="p-3 rounded-xl" style="background:var(--acc)">Modalità demo: nessuna email viene inviata. Il tuo codice è <b class="text-xl">${S.tmp.code}</b></div>
+<label class="block"><span class="mut text-sm">Inserisci il codice a 6 cifre</span><input id="sv" inputmode="numeric" maxlength="6" class="inp text-2xl tracking-widest"></label>
+<button class="btn w-full" onclick="signup2()">Verifica e crea account</button><button class="btn o w-full" onclick="S.step=1;S.err='';R()">Indietro</button>`}</div>`}
+function login(){const i=$('#li').value.trim().toLowerCase(),p=$('#lp').value,u=users().find(x=>x.username.toLowerCase()==i||x.email.toLowerCase()==i);
+if(!u||u.pw!==hash(p)){S.err='Nome utente/email o password non corretti.';return R()}U=init(u);st.set('gf_ses',u.username);S.err='';go('home')}
+function signup1(){const e=$('#se').value.trim(),n=$('#su').value.trim(),p=$('#sp').value,c=$('#sc').value;S.tmp={email:e,username:n};
+if(!/^\S+@\S+\.\S+$/.test(e))S.err='Inserisci un indirizzo email valido.';
+else if(n.length<3||!/^[\w.-]+$/.test(n))S.err='Il nome utente richiede 3+ caratteri: lettere, numeri, punti o trattini.';
+else if(users().some(u=>u.username.toLowerCase()==n.toLowerCase()))S.err='Nome utente già in uso. Scegline un altro.';
+else if(users().some(u=>u.email.toLowerCase()==e.toLowerCase()))S.err='Esiste già un account con questa email.';
+else if(p.length<6)S.err='La password deve avere almeno 6 caratteri.';
+else if(p!==c)S.err='Le password non coincidono.';
+else{S.err='';S.tmp.pw=hash(p);S.tmp.code=String(Math.floor(100000+Math.random()*900000));S.step=2}R()}
+function signup2(){if($('#sv').value.trim()!==S.tmp.code){S.err='Codice errato. Controlla il codice sopra e riprova.';return R()}
+if(users().some(u=>u.username.toLowerCase()==S.tmp.username.toLowerCase())){S.err='Nome utente già in uso.';S.step=1;return R()}
+U=init({email:S.tmp.email,username:S.tmp.username,pw:S.tmp.pw,hcp:null,rounds:[],custom:[]});save(U);st.set('gf_ses',U.username);S.tmp=null;go('profile')}
+function logout(){st.del('gf_ses');U=null;S.g=null;S.rep=null;S.auth='login';R()}
+
+/* ---------- dashboard ---------- */
+const hc=()=>U.hcp==null?'–':String(U.hcp).replace('.',',');
+function perf(){const rs=U.rounds.filter(r=>(r.s.holes||0)>=9),n=rs.length,fe=rs.reduce((a,r)=>a+r.s.fe,0),ge=rs.reduce((a,r)=>a+r.s.ge,0),hit=rs.reduce((a,r)=>a+(r.s.fh||0)+(r.s.gh||0),0);
+const prec=fe+ge?Math.round(hit/(fe+ge)*100):null,idx=r=>(r.s.fir+r.s.gir)/2,last=rs.slice(-3);let cons=null;
+if(last.length>=2){const v=last.map(idx),mu=v.reduce((a,b)=>a+b)/v.length,sd=Math.sqrt(v.reduce((a,b)=>a+(b-mu)**2,0)/v.length);cons=Math.round(Math.max(0,100-2*sd))}
+const on=n>=1&&fe+ge>=9,score=on?Math.round(cons==null?prec:.6*prec+.4*cons):null;
+let delta=null;if(rs.length>=4){const old=rs.slice(0,-3),a=x=>x.reduce((s,r)=>s+idx(r),0)/x.length;delta=Math.round(a(last)-a(old))}
+return{n,fe,ge,prec,cons,on,score,delta}}
+function pcard(){const p=perf(),sc=p.score,drv=U.drv,K=2*Math.PI*44;
+return`<div class="pcard p-5"><div class="flex justify-between items-start gap-2"><div><div class="text-xl font-extrabold">Indice di performance</div><div class="mut text-sm">La sintesi del tuo gioco</div></div><span class="pill">${p.on?'Attivo':'In attesa dei dati'}</span></div>
+<div class="flex flex-wrap gap-5 items-center mt-4"><svg viewBox="0 0 100 100" class="w-28 h-28" role="img" aria-label="Indice ${sc??'non disponibile'} su 100"><circle cx="50" cy="50" r="44" fill="none" stroke="#2b3a34" stroke-width="9"/><circle cx="50" cy="50" r="44" fill="none" stroke="#10b981" stroke-width="9" stroke-linecap="round" stroke-dasharray="${K*(sc||0)/100} ${K}" transform="rotate(-90 50 50)" style="transition:stroke-dasharray .8s"/><text x="50" y="52" text-anchor="middle" font-size="24" font-weight="800" fill="#e9f0ec">${sc??'—'}</text><text x="50" y="67" text-anchor="middle" font-size="9" font-weight="700" fill="#10b981">/100</text></svg>
+<div class="flex-1 min-w-[12rem] space-y-3"><div><div class="flex justify-between text-sm font-semibold"><span>Consistenza</span><b>${p.cons==null?'—':p.cons}</b></div><div class="bar mt-1"><i style="width:${p.cons||0}%"></i></div><div class="mut text-xs mt-1">${Math.min(p.n,3)}/3 round completi</div></div>
+<div><div class="flex justify-between text-sm font-semibold"><span>Precisione</span><b>${p.prec==null?'—':p.prec}</b></div><div class="bar mt-1"><i style="width:${p.prec||0}%"></i></div><div class="mut text-xs mt-1">${p.fe} fairway · ${p.ge} green</div></div></div></div>
+<div class="grid grid-cols-5 gap-3 mt-4"><div class="tile p-3 col-span-3"><div class="mut text-xs">Distanza media driver</div><div class="text-xl font-extrabold">${drv?drv+' m':'—'}</div><div class="mut text-xs">${drv?'Dal tuo profilo':'Nessun dato'}</div></div>
+<div class="tile p-3 col-span-2"><div class="mut text-xs">Periodo precedente</div><div class="font-extrabold" style="color:var(--g)">${p.delta==null?'Dati insufficienti':(p.delta>0?'+':'')+p.delta+' pt'}</div></div></div>
+<p class="mut text-xs mt-3">${p.on?'Punteggio calcolato sui tuoi round con almeno 9 buche registrate.':'Inserisci round completi (almeno 9 buche) e almeno 9 rilevazioni di fairway o green per attivare il punteggio.'}</p></div>`}
+function disp(){const fe=U.rounds.reduce((a,r)=>a+(r.s.fe||0),0),A=k=>fe?Math.round(U.rounds.reduce((a,r)=>a+(r.s[k]||0)*(r.s.fe||0)/100,0)/fe):0;
+return`<div class="c p-5"><div class="flex justify-between items-baseline"><b>Dispersione tee shot</b><span class="mut text-sm">${fe} tee shot registrati</span></div>${fan({fir:A('fir'),L:A('L'),R:A('R'),B:A('B'),W:A('W')},tier())}</div>`}
+function home(){const t=tier(),r=U.rounds[U.rounds.length-1];return`
+<div class="c p-6 h flex justify-between items-center" onclick="go('profile')" style="cursor:pointer"><div><div class="mut text-sm">Handicap ufficiale</div><div class="text-6xl font-extrabold leading-none mt-1">${hc()}</div></div>
+<div class="text-right"><div class="mut text-sm">Livello</div><div class="text-2xl font-extrabold" style="color:var(--g)">${t||'Da definire'}</div></div></div>
+${pcard()}
+${disp()}
+${dpanel(U.rounds)}
+${trend()}
+<div class="grid grid-cols-2 gap-3">${[['game','⛳','Gioca un round'],['train','🏌️','Allenati'],['cal','📅','Calendario gare'],['coach','🤖','AI Coach']].map(a=>`<button class="c h p-4 text-left" onclick="go('${a[0]}')"><div class="text-2xl">${a[1]}</div><div class="font-bold mt-1">${a[2]}</div></button>`).join('')}</div>
+<div class="c p-5"><div class="font-bold mb-2">Ultimo round</div>${r?`<div class="mut text-sm mb-2">${esc(r.course)} · ${r.date}</div>${bars([['GIR',r.s.gir],['FIR',r.s.fir]])}`:'<p class="mut">Nessun round ancora. Avvia la modalità Gioco per registrare il primo.</p>'}</div>`}
+const bars=a=>a.map(x=>`<div class="mb-3"><div class="flex justify-between"><span>${x[0]}</span><b class="text-lg">${x[1]}%</b></div><div class="bar"><i style="width:${x[1]}%"></i></div></div>`).join('');
+
+/* ---------- allenamenti ---------- */
+function train(){const std=S.tr=='std';return`<h2 class="text-3xl font-extrabold">Allenamenti</h2>
+<div class="flex gap-2"><button class="chip ${std?'on':''}" onclick="S.tr='std';R()">Allenamenti</button><button class="chip ${!std?'on':''}" onclick="S.tr='cus';R()">Allenamenti personalizzati</button></div>${std?stdTrain():customTrain()}`}
+function stdTrain(){return`<div class="flex gap-2 overflow-x-auto pb-1">${Object.keys(W).map(k=>`<button class="chip ${S.w==k?'on':''}" onclick="S.w='${k}';R()">${WN[k]}</button>`).join('')}</div>
+<div class="space-y-3">${W[S.w].map(w=>`<details class="c p-4"><summary class="font-bold cursor-pointer">${w.t}</summary><p class="mt-2"><b>Obiettivo:</b> ${w.o}</p><div class="font-bold mt-2">Esercizio</div><ol class="list-decimal pl-5">${w.d.map(x=>`<li>${x}</li>`).join('')}</ol><div class="font-bold mt-2">Consigli</div><ul class="list-disc pl-5 mut">${w.k.map(x=>`<li>${x}</li>`).join('')}</ul></details>`).join('')}</div>`}
+function customTrain(){const e=S.ed!=null?U.custom[S.ed]:null;return`<div class="c p-5 space-y-3"><div class="font-bold">${e?'Modifica allenamento':'Nuovo allenamento'}</div>${S.err?`<div class="err">${S.err}</div>`:''}
+<input id="cn" class="inp" placeholder="Nome (es. Routine del sabato)" value="${esc(e?.name||'')}">
+<div class="grid grid-cols-2 gap-3"><select id="ca" class="inp">${Object.keys(WN).map(k=>`<option value="${k}" ${e?.area==k?'selected':''}>${WN[k]}</option>`).join('')}</select><input id="cm" type="number" min="1" max="300" class="inp" placeholder="Minuti" value="${e?.min||''}"></div>
+<textarea id="cd" rows="5" class="inp" placeholder="Un esercizio per riga">${esc(e?e.drills.join('\n'):'')}</textarea><textarea id="ck" rows="2" class="inp" placeholder="Note (facoltativo)">${esc(e?.notes||'')}</textarea>
+<div class="flex gap-2"><button class="btn flex-1" onclick="saveC()">Salva allenamento</button>${e?`<button class="btn o" onclick="S.ed=null;S.err='';R()">Annulla</button>`:''}</div></div>
+<div class="space-y-3">${U.custom.length?U.custom.map((c,i)=>`<div class="c p-4"><div class="flex justify-between gap-2"><div><div class="font-bold">${esc(c.name)}</div><div class="mut text-sm">${WN[c.area]}${c.min?' · '+c.min+' min':''}</div></div><div class="flex gap-3 text-sm font-bold"><button onclick="S.ed=${i};S.err='';R();scrollTo(0,0)">Modifica</button><button style="color:#f87171" onclick="delW(${i})">${S.cf=='w'+i?'Conferma?':'Elimina'}</button></div></div><ol class="list-decimal pl-5 mt-2">${c.drills.map(d=>`<li>${esc(d)}</li>`).join('')}</ol>${c.notes?`<p class="mut text-sm mt-2">${esc(c.notes)}</p>`:''}</div>`).join(''):'<p class="mut">Non hai ancora allenamenti personalizzati. Creane uno qui sopra.</p>'}</div>`}
+function saveC(){const name=$('#cn').value.trim(),d=$('#cd').value.split('\n').map(x=>x.trim()).filter(Boolean);
+if(!name){S.err='Dai un nome all\'allenamento.';return R()}if(!d.length){S.err='Aggiungi almeno un esercizio.';return R()}
+const o={name,area:$('#ca').value,min:parseInt($('#cm').value)||0,drills:d,notes:$('#ck').value.trim()};S.ed!=null?U.custom[S.ed]=o:U.custom.push(o);S.ed=null;S.err='';save(U);R()}
+
+/* ---------- calendario ---------- */
+function cal(){const ev=E.filter(e=>S.f=='all'||e[4]==S.f).sort((a,b)=>a[0]<b[0]?-1:1),m={};ev.forEach(e=>(m[e[0].slice(0,7)]=m[e[0].slice(0,7)]||[]).push(e));
+return`<h2 class="text-3xl font-extrabold">Calendario gare</h2><p class="mut text-sm">Le prime 7 gare vengono dall'elenco Federgolf; le altre sono indicative. Ogni scheda apre il portale Federgolf: verifica date e sedi.</p>
+<div class="flex gap-2 overflow-x-auto pb-1">${Object.keys(FG).map(k=>`<button class="chip ${S.f==k?'on':''}" onclick="S.f='${k}';R()">${FG[k]}</button>`).join('')}</div>
+${Object.keys(m).map(k=>`<div class="font-extrabold text-lg mt-2 capitalize">${new Date(k+'-01').toLocaleDateString('it-IT',{month:'long',year:'numeric'})}</div><div class="space-y-3">${m[k].map(e=>`<a href="${FED}" target="_blank" rel="noopener" class="c h flex overflow-hidden" style="display:flex"><div class="trophy">🏆</div><div class="p-3 min-w-0"><div class="font-semibold text-sm">${esc(e[1])}</div><div class="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1"><span class="tag">${e[2]}</span><span class="mut text-sm">🕒 ${e[0].split('-').reverse().join('/')}</span><span class="mut text-sm">📍 ${esc(e[3])}</span>${e[5]?'<span class="mut text-xs italic">indicativa</span>':''}</div></div></a>`).join('')}</div>`).join('')}`}
+
+/* ---------- profilo ---------- */
+function profile(){return`<h2 class="text-3xl font-extrabold">Profilo</h2><div class="c p-5 space-y-3"><div><div class="font-bold text-lg">${esc(U.username)}</div><div class="mut text-sm">${esc(U.email)}</div></div>
+<div class="p-4 rounded-xl" style="background:var(--acc)"><div class="mut text-sm">Il tuo livello</div><div class="text-2xl font-extrabold">${tier()||'Inserisci l\'HCP'}</div><div class="mut text-xs mt-1">Avanzato da -20,0 a 10,0 · Intermedio 10,1–20,0 · Base 20,1+</div></div>
+<label class="block"><span class="mut text-sm">Handicap ufficiale (HCP)</span><input id="hcp" type="number" step="0.1" min="-20" max="54" class="inp" value="${U.hcp??''}" placeholder="es. 18,4"></label>
+<label class="block"><span class="mut text-sm">Distanza media driver (metri, facoltativo)</span><input id="drv" type="number" min="50" max="400" class="inp" value="${U.drv??''}"></label>
+${S.err?`<div class="err">${S.err}</div>`:''}<button class="btn w-full" onclick="setH()">Salva</button></div>
+<div class="c p-5"><div class="font-bold mb-2">Storico round</div>${U.rounds.length?U.rounds.slice().reverse().map((r,i)=>`<div class="flex items-center gap-2 py-2 border-b" style="border-color:var(--line)"><button class="flex-1 text-left flex justify-between" onclick="S.rep=U.rounds[${U.rounds.length-1-i}];go('game')"><span>${esc(r.course)}<br><span class="mut text-sm">${r.date}</span></span><span class="font-bold">GIR ${r.s.gir}% · FIR ${r.s.fir}%</span></button><button class="text-sm font-bold" style="color:#f87171" aria-label="Elimina round" onclick="delR(${U.rounds.length-1-i})">${S.cf=='r'+(U.rounds.length-1-i)?'Conferma?':'Elimina'}</button></div>`).join(''):'<p class="mut">I round conclusi appariranno qui.</p>'}</div>
+<div class="c p-5 space-y-3"><div class="font-bold">Note personali</div><p class="mut text-sm">Scrivi o detta una nota (es. sensazioni di gioco, obiettivi).</p>
+<textarea id="nt" rows="3" class="inp" placeholder="La tua nota…" oninput="S.nt=this.value">${esc(S.nt||'')}</textarea>${S.err2?`<div class="err">${S.err2}</div>`:''}
+<div class="flex gap-2"><button class="btn o flex-1" onclick="dictate()">${S.dict?'⏹ Ferma dettato':'🎤 Detta nota'}</button><button class="btn flex-1" onclick="saveN()">Salva nota</button></div>
+${U.notes.map((n,i)=>`<div class="tile p-3"><div class="flex justify-between text-sm mb-1"><span class="mut">${n.d}</span><button class="font-bold" style="color:#f87171" onclick="delN(${i})">${S.cf=='n'+i?'Conferma?':'Elimina'}</button></div><div>${esc(n.t)}</div></div>`).join('')}</div>
+<button class="btn o w-full" onclick="logout()">Esci</button>`}
+let REC=null;
+function dictate(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;S.nt=$('#nt')?.value??S.nt;
+if(!SR){S.err2='Il dettato vocale non è supportato da questo browser: scrivi la nota.';return R()}
+if(REC){REC.stop();return}S.err2='';REC=new SR();REC.lang='it-IT';REC.continuous=true;REC.interimResults=false;
+REC.onresult=e=>{const t=$('#nt');for(let i=e.resultIndex;i<e.results.length;i++)if(e.results[i].isFinal){t.value+=(t.value?' ':'')+e.results[i][0].transcript.trim();S.nt=t.value}};
+REC.onerror=e=>{S.err2=e.error=='not-allowed'||e.error=='service-not-allowed'?'Microfono non consentito in questa pagina: scrivi la nota.':'Dettato vocale non riuscito: scrivi la nota.'};
+REC.onend=()=>{REC=null;S.dict=false;R()};try{REC.start();S.dict=true}catch(e){REC=null;S.err2='Dettato vocale non disponibile: scrivi la nota.'}R()}
+function saveN(){const t=($('#nt').value||'').trim();if(!t){S.err2='Scrivi o detta una nota prima di salvare.';return R()}if(REC)REC.stop();U.notes.unshift({d:new Date().toLocaleDateString('it-IT'),t});S.nt='';S.err2='';save(U);R()}
+function setH(){const v=parseFloat($('#hcp').value.replace(',','.')),d=$('#drv').value;if(isNaN(v)||v<-20||v>54){S.err='Inserisci un HCP tra -20 e 54.';return R()}
+U.hcp=Math.round(v*10)/10;U.drv=d?Math.max(50,Math.min(400,parseInt(d))):null;save(U);S.err='';go('home')}
+
+/* ---------- modalità gioco ---------- */
+const leaveOk=()=>{const r=S.g.r[S.g.h];return!r||!r.shots.some(s=>s.res=='G')||r.skip||r.holed};
+function nav(i){if(i!=S.g.h&&!leaveOk()){S.msg='Completa la buca: tocca il green per ogni putt e la buca per finire (oppure salta la puttata).';return R()}S.g.h=i;R()}
+function game(){if(S.rep)return report(S.rep);const msg=S.msg;S.msg='';
+if(!S.g)return`<h2 class="text-3xl font-extrabold">Gioca</h2><div class="c p-5 space-y-3"><label class="block"><span class="mut text-sm">Campo da golf</span><select class="inp" onchange="S.sel=+this.value">${['Veneto','Pozzolengo (Garda)','Schema'].map(r=>`<optgroup label="${r=='Pozzolengo (Garda)'?'Lago di Garda':r=='Schema'?'Altro':'Veneto'}">${C.map((c,i)=>c.r==r?`<option value="${i}" ${i==S.sel?'selected':''}>${c.n}</option>`:'').join('')}</optgroup>`).join('')}</select></label>
+<p class="mut text-xs">Mappe dall'alto in stile satellitare stilizzato (non immagini reali). Ca' Amata buca 1 è un dogleg a destra; le altre buche hanno forme generate, non ancora ricalcate sui rilievi reali.</p><button class="btn w-full" onclick="S.g={ci:S.sel,h:0,r:{}};R()">Inizia round</button></div>`;
+const G=S.g,h=G.h,m=geo(G.ci,h),r=G.r[h]||{shots:[]},sh=r.shots,n=sh.length+1,gi=sh.findIndex(s=>s.res=='G'),lim=m.par-2,no=m.par>3&&n==1;
+const rule=m.par==3?'Par 3: green al colpo 1 = GIR.':m.par==4?'Par 4: il colpo 1 non raggiunge il green. Il green si registra dal colpo 2 (GIR = green al colpo 2).':'Par 5: il colpo 1 non raggiunge il green. Il green si registra al colpo 2 o 3 (GIR = green entro il colpo 3).';
+const col={G:'#fff',F:'#f2b705',W:'#3b8fd1',B:'#ecd9a0'};
+const pts=sh.filter(s=>s.x!=null),line=pts.length?`<polyline points="${m.t.x},${m.t.y} ${pts.map(s=>s.x+','+s.y).join(' ')}" fill="none" stroke="#fff" stroke-width="1.2" stroke-dasharray="3 3" opacity=".85"/>`:'';
+const dots=sh.map((s,i)=>s.x==null?'':`<circle cx="${s.x}" cy="${s.y}" r="7" fill="${col[s.res]||'#e67e22'}" stroke="#000" stroke-width="1.5"/><text x="${s.x}" y="${s.y+3.5}" font-size="10" font-weight="700" text-anchor="middle">${i+1}</text>`).join('');
+const FP=pth(m),map=`<svg id="hole" viewBox="0 0 200 340" class="w-full rounded-2xl" style="width:min(100%,calc(66vh*.588));aspect-ratio:200/340;display:block;margin:auto;touch-action:manipulation;cursor:crosshair" onclick="tap(event)" role="img" aria-label="Buca ${h+1} vista dall'alto">
+<defs><filter id="nz" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" seed="${h+3}"/><feColorMatrix values="0 0 0 0 .08 0 0 0 0 .25 0 0 0 0 .1 0 0 0 .6 0"/></filter>
+<radialGradient id="gg" cx=".4" cy=".35"><stop offset="0" stop-color="#c3f097"/><stop offset="1" stop-color="#78c05f"/></radialGradient><linearGradient id="wt" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#63bdea"/><stop offset="1" stop-color="#2a76b5"/></linearGradient></defs>
+<rect width="200" height="340" fill="#3c7a49"/><rect width="200" height="340" filter="url(#nz)" opacity=".6"/>
+<path d="${FP}" fill="none" stroke="#69a862" stroke-width="58" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="${FP}" fill="none" stroke="#84c576" stroke-width="48" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="${FP}" fill="none" stroke="#9bd88b" stroke-width="48" stroke-dasharray="9 9" opacity=".5"/>
+<ellipse cx="${m.w.x}" cy="${m.w.y}" rx="22" ry="30" fill="url(#wt)" stroke="#c4e8f8" stroke-width="1.5"/><ellipse cx="${m.w.x-6}" cy="${m.w.y-9}" rx="8" ry="10" fill="#fff" opacity=".25"/>
+${m.bk.map(k=>`<ellipse cx="${k[0]+1}" cy="${k[1]+1.5}" rx="${k[2]}" ry="${k[3]}" fill="#000" opacity=".2"/><ellipse cx="${k[0]}" cy="${k[1]}" rx="${k[2]}" ry="${k[3]}" fill="#f3e6bb" stroke="#d6c28a" stroke-width="1"/>`).join('')}
+<circle cx="${m.g.x}" cy="${m.g.y}" r="23" fill="#8fd078"/><circle cx="${m.g.x}" cy="${m.g.y}" r="19" fill="url(#gg)" stroke="#dff5cb" stroke-width="1.2"/><circle cx="${m.g.x}" cy="${m.g.y}" r="2.2" fill="#222"/><path d="M${m.g.x} ${m.g.y}V${m.g.y-12}l7 2.5-7 2.5" fill="#e74c3c"/>
+<rect x="${m.t.x-10}" y="${m.t.y-6}" width="20" height="12" rx="3" fill="#6fb064" stroke="#a6dc97" stroke-width="1"/>
+${m.tr.map(k=>`<circle cx="${k[0]+2}" cy="${k[1]+2.5}" r="${k[2]}" fill="#0f2e19" opacity=".4"/><circle cx="${k[0]}" cy="${k[1]}" r="${k[2]}" fill="#2a7040"/><circle cx="${k[0]-1.5}" cy="${k[1]-1.8}" r="${k[2]*.55}" fill="#47995c"/>`).join('')}${line}${dots}</svg>`;
+let body;
+if(gi>=0){const s=sh[gi],pl=r.pl||[],bx=s.x!=null?Math.max(14,Math.min(106,60+(s.x-m.g.x)*2.6)):60,by=s.x!=null?Math.max(14,Math.min(106,60+(s.y-m.g.y)*2.6)):92,pts=[[bx,by],...pl.map(p=>[p.x,p.y])];
+body=`<div class="c p-4 zoomin"><div class="font-bold">Green raggiunto al colpo ${gi+1} · ${gi+1<=lim?'GIR ✓':'non GIR'}</div><p class="mut text-sm">Tocca il green dove si ferma ogni putt. Per l'ultimo putt tocca la buca 🚩.</p>
+<svg id="grn" viewBox="0 0 120 120" class="w-full mx-auto block" style="max-width:22rem;aspect-ratio:1;touch-action:manipulation;cursor:crosshair" onclick="putt(event)" role="img" aria-label="Green ingrandito"><defs><radialGradient id="gg2" cx=".4" cy=".35"><stop offset="0" stop-color="#c3f097"/><stop offset="1" stop-color="#78c05f"/></radialGradient></defs>
+<circle cx="60" cy="60" r="58" fill="#3f8450"/><circle cx="60" cy="60" r="52" fill="url(#gg2)" stroke="#dff5cb" stroke-width="1.5"/>
+<polyline points="${pts.map(p=>p.join(',')).join(' ')}" fill="none" stroke="#fff" stroke-width="1" stroke-dasharray="3 2.5" opacity=".9"/>
+<circle cx="60" cy="48" r="9" fill="none" stroke="#fff" stroke-width=".8" stroke-dasharray="2 2" opacity=".7"/><circle cx="60" cy="48" r="4.5" fill="#111" stroke="#fff" stroke-width="1"/><path d="M60 48V22l13 5-13 5" fill="#e74c3c" stroke="#fff" stroke-width=".7"/>
+<circle cx="${bx}" cy="${by}" r="4" fill="#fff" stroke="#000" stroke-width="1"/>${pl.map((p,i)=>p.cup?'':`<circle cx="${p.x}" cy="${p.y}" r="4.5" fill="#f2b705" stroke="#000" stroke-width="1"/><text x="${p.x}" y="${p.y+2.6}" font-size="6.5" font-weight="700" text-anchor="middle" fill="#000">${i+1}</text>`).join('')}</svg>
+<div class="text-center mt-2"><div class="text-3xl font-extrabold">${pl.length}<span class="mut text-sm font-semibold"> putt</span></div><div class="text-sm">${r.holed?`✓ Buca completata · punteggio <b>${gi+1+pl.length}</b>${h<17?' · passo alla successiva…':''}`:r.skip?'Puttata saltata':'Tocca il green per registrare il prossimo putt'}</div></div>
+<div class="flex flex-wrap gap-2 justify-center mt-3"><button class="btn o" ${pl.length?'':'disabled'} onclick="undoPutt()">Annulla putt</button>${r.holed||r.skip?'':`<button class="btn" onclick="holeOut()">Imbucata</button>`}<button class="btn o" onclick="skipP()">${r.skip?'Annulla salto':'Salta puttata'}</button></div>
+<div class="text-sm mt-2 text-center"><button class="underline" onclick="undo()">Annulla colpo al green</button></div></div>`}
+else body=`<p class="mut text-sm">Tocca ovunque sulla mappa per posizionare il colpo ${n}: la posizione è esatta (rough, fairway, bunker, acqua o green).</p>${map}
+<div class="c p-3"><div class="flex justify-between text-sm mb-2"><b>Prossimo: colpo ${n}</b><button class="underline" onclick="undo()">Annulla ultimo colpo</button></div><div class="text-sm mut mb-2">${sh.length?sh.map((s,i)=>`${i+1}: ${RN[s.res]}`).join(' · '):'Nessun colpo registrato.'}</div>
+<div class="flex flex-wrap gap-2">${['F','L','R','B','W','G'].map(k=>`<button class="chip" ${k=='G'&&no?'disabled style="opacity:.4"':''} onclick="addShot('${k}')">${RN[k]}</button>`).join('')}</div></div>`;
+return`<div class="flex justify-between items-end"><div><div class="mut text-sm">${esc(C[G.ci].n)}</div><div class="text-4xl font-extrabold leading-none">Buca ${h+1}</div></div><div class="text-right"><div class="text-2xl font-extrabold">Par ${m.par}</div><div class="mut text-sm">${m.len} m</div></div></div>
+<p class="text-sm p-3 rounded-xl" style="background:var(--acc)">${rule}</p>${msg?`<div class="err" role="alert">${msg}</div>`:''}${body}
+<div class="flex gap-2"><button class="btn o flex-1" ${h==0?'disabled':''} onclick="nav(${h-1})">Precedente</button>${h<17?`<button class="btn flex-1" onclick="nav(${h+1})">Buca successiva</button>`:`<button class="btn flex-1" onclick="finish()">Termina round</button>`}</div>
+<div class="flex gap-1 flex-wrap">${C[G.ci].p.map((_,i)=>`<button class="w-8 h-8 rounded-full text-sm font-bold" style="border:1px solid var(--line);${G.r[i]?'background:var(--acc);':''}${i==h?'background:var(--g2);color:#fff':''}" onclick="nav(${i})">${i+1}</button>`).join('')}</div>
+<div class="flex justify-between"><button class="mut underline text-sm" onclick="discard()">${S.cf=='d'?'Conferma scarto?':'Scarta round'}</button>${h<17?`<button class="underline text-sm" onclick="if(leaveOk())finish();else{S.msg='Completa prima la buca corrente.';R()}">Termina in anticipo</button>`:''}</div>`}
+function tap(e){const v=$('#hole'),p=v.createSVGPoint();p.x=e.clientX;p.y=e.clientY;const q=p.matrixTransform(v.getScreenCTM().inverse()),x=Math.min(200,Math.max(0,q.x)),y=Math.min(340,Math.max(0,q.y));addShot(classify(x,y,geo(S.g.ci,S.g.h)),x,y)}
+function addShot(res,x,y){const G=S.g,m=geo(G.ci,G.h),r=G.r[G.h]||{shots:[]},n=r.shots.length+1;S.msg='';
+if(r.shots.some(s=>s.res=='G'))S.msg='Green già raggiunto. Annulla il colpo per modificarlo.';
+else if(res=='G'&&m.par>3&&n==1)S.msg='Su par 4 e par 5 il green non si raggiunge con il colpo 1. Il green si registra dal colpo 2.';
+else if(n>9)S.msg='Massimo 9 colpi prima del green.';
+else{r.shots.push(x==null?{res}:{x,y,res});G.r[G.h]=r}R()}
+function undo(){const G=S.g,r=G.r[G.h];if(!r)return;if(r.shots[r.shots.length-1]?.res=='G'){r.putts=null;r.holed=false;r.skip=false;r.pl=[]}r.shots.pop();if(!r.shots.length)delete G.r[G.h];R()}
+function addPutt(x,y,cup){const r=S.g.r[S.g.h];r.pl=r.pl||[];S.msg='';
+if(r.holed||r.skip){S.msg='Buca già completata. Annulla un putt per modificarla.';return R()}
+if(r.pl.length>=8){S.msg='Massimo 8 putt.';return R()}
+r.pl.push(cup?{x:60,y:48,cup:true}:{x,y});
+if(cup){r.holed=true;r.putts=r.pl.length;const hh=S.g.h;setTimeout(()=>{if(S.g&&S.g.h==hh&&S.g.r[hh]&&S.g.r[hh].holed&&hh<17){S.g.h=hh+1;R();scrollTo(0,0)}},1300)}R()}
+function putt(e){const v=$('#grn'),p=v.createSVGPoint();p.x=e.clientX;p.y=e.clientY;const q=p.matrixTransform(v.getScreenCTM().inverse());
+if(Math.hypot(q.x-60,q.y-60)>57){S.msg='Tocca dentro il green.';return R()}addPutt(q.x,q.y,Math.hypot(q.x-60,q.y-48)<=9)}
+const holeOut=()=>addPutt(60,48,true);
+function undoPutt(){const r=S.g.r[S.g.h];if(!r||!r.pl||!r.pl.length)return;const p=r.pl.pop();if(p.cup){r.holed=false;r.putts=null}R()}
+function skipP(){const r=S.g.r[S.g.h];r.skip=!r.skip;R()}
+function finish(){const G=S.g;if(!Object.keys(G.r).length){S.msg='Registra almeno una buca.';return R()}if(!leaveOk()){S.msg='Completa la buca corrente (putt e buca) o salta la puttata.';return R()}
+const rd={date:new Date().toLocaleDateString('it-IT'),ci:G.ci,course:C[G.ci].n,r:G.r,s:stats(G.r,G.ci)};U.rounds.push(rd);save(U);S.rep=rd;S.g=null;S.fx=true;R()}
+function report(r){const s=r.s,seg=(v,c,l)=>v?`<div title="${l}" style="width:${v}%;background:${c}" class="h-full"></div>`:'';
+return`<div><h2 class="text-3xl font-extrabold">Report del round</h2><p class="mut">${esc(r.course)} · ${r.date}</p></div>
+<div class="grid grid-cols-2 gap-3"><div class="pcard p-4 text-center"><div class="sub text-sm">Green in regulation</div><div class="text-5xl font-extrabold" style="color:var(--lime)">${s.gir}%</div><div class="sub text-xs">${s.ge} buche valutate</div></div><div class="pcard p-4 text-center"><div class="sub text-sm">Fairway in regulation</div><div class="text-5xl font-extrabold" style="color:var(--lime)">${s.fir}%</div><div class="sub text-xs">${s.fe} tee shot (par 4/5)</div></div></div>
+<div class="c p-5">${bars([['GIR',s.gir],['FIR',s.fir],['Miss a sinistra',s.L],['Miss a destra',s.R],['Bunker',s.B||0],['Hazard acqua',s.W||0]])}
+<div class="font-bold mb-1">Distribuzione dei tee shot</div><div class="flex h-5 rounded-full overflow-hidden" style="background:var(--line)">${seg(s.fir,'#2e9e57','Fairway')}${seg(s.L,'#f2b705','Sinistra')}${seg(s.R,'#e67e22','Destra')}${seg(s.B||0,'#d8c27a','Bunker')}${seg(s.W||0,'#3b8fd1','Acqua')}</div>
+<div class="flex flex-wrap gap-3 text-sm mt-2 mut"><span>🟢 Fairway ${s.fir}%</span><span>🟡 Sinistra ${s.L}%</span><span>🟠 Destra ${s.R}%</span><span>🏖️ Bunker ${s.B||0}%</span><span>🔵 Acqua ${s.W||0}%</span></div></div>
+<div class="c p-5"><div class="font-bold mb-2">Dispersione tee shot</div>${fan(s,tier())}</div>${dpanel([r])}<button class="btn w-full" onclick="S.rep=null;R()">Nuovo round</button>${U.rounds.indexOf(r)>=0?`<button class="btn o w-full" style="color:#f87171" onclick="delR(U.rounds.indexOf(S.rep))">${S.cf=='r'+U.rounds.indexOf(r)?'Conferma eliminazione?':'Elimina round'}</button>`:''}`}
+
+/* ---------- grafico dispersione ---------- */
+const BM={Avanzato:55,Intermedio:42,Base:28};
+function fan(s,t){const ax=160,ay=214,pol=(a,r)=>[ax+r*Math.sin(a*Math.PI/180),ay-r*Math.cos(a*Math.PI/180)],
+sec=(a0,a1,r)=>{const p=pol(a0,r),q=pol(a1,r);return`M${ax} ${ay}L${p[0]} ${p[1]}A${r} ${r} 0 0 1 ${q[0]} ${q[1]}Z`},
+z=(a0,a1,R,v,c1,c2)=>`<path d="${sec(a0,a1,R)}" fill="${c1}" stroke="#1a2320" stroke-width="2"/><path d="${sec(a0,a1,Math.max(12,R*v/100))}" fill="${c2}" stroke="#fff" stroke-width="2"/>`,
+bm=BM[t]||42,b0=pol(-16.5,164*bm/100),b1=pol(16.5,164*bm/100),d=s.fir-bm,
+lb=(x,y,n,v,big)=>`<text x="${x}" y="${y}" text-anchor="middle" font-size="11" fill="#9aada3" font-weight="600">${n}</text><text x="${x}" y="${y+(big?24:18)}" text-anchor="middle" font-size="${big?26:19}" font-weight="800" fill="#e9f0ec">${v}%</text>`;
+return`<svg viewBox="0 0 320 230" class="w-full" style="max-width:26rem;display:block;margin:auto" role="img" aria-label="Dispersione tee shot">
+${z(-56,-17,168,s.L,'#22332b','#3f9b73')}${z(-17,17,168,s.fir,'#1d3b30','#10b981')}${z(17,56,168,s.R,'#22332b','#3f9b73')}${z(-92,-60,96,s.W,'#1b2f3c','#3b8fd1')}${z(60,92,96,s.B,'#3a3522','#e0bf62')}
+<path d="M${b0[0]} ${b0[1]}A${164*bm/100} ${164*bm/100} 0 0 1 ${b1[0]} ${b1[1]}" fill="none" stroke="#d64541" stroke-width="2.5"/>
+${lb(52,70,'Rough sinistro',s.L)}${lb(160,24,'Fairway',s.fir,1)}${lb(268,70,'Rough destro',s.R)}${lb(34,150,'Penalty',s.W)}${lb(286,150,'Bunker',s.B)}</svg>
+<div class="text-center text-sm mt-1"><span class="mut">Fairway vs riferimento ${t||'medio'} (${bm}%)</span> <b style="color:${d<0?'#f87171':'#10b981'}">${d<0?'↓':'↑'} ${Math.abs(d)}%</b></div><div class="mut text-xs text-center">La linea rossa indica il riferimento indicativo del livello. Penalty = hazard acqua.</div>`}
+function delR(i){if(i<0)return;if(S.cf!=='r'+i){S.cf='r'+i;return R()}S.cf=null;const r=U.rounds[i];U.rounds.splice(i,1);save(U);if(S.rep===r)S.rep=null;R()}
+function delW(i){if(S.cf!=='w'+i){S.cf='w'+i;return R()}S.cf=null;U.custom.splice(i,1);S.ed=null;save(U);R()}
+function delN(i){if(S.cf!=='n'+i){S.cf='n'+i;return R()}S.cf=null;U.notes.splice(i,1);save(U);R()}
+function discard(){if(S.cf!=='d'){S.cf='d';return R()}S.cf=null;S.g=null;R()}
+/* ---------- statistiche dettagliate ---------- */
+const fm=n=>String(Math.round(n*10)/10).replace('.',',');
+function detail(rd){const o={hl:0,cn:0,st:0,pr:0,pu:0,nh:0,p1:0,p3:0,pg:0,ng:0,sa:0,sv:0,bk:0,wt:0,d:[0,0,0,0,0],ps:{3:[0,0],4:[0,0],5:[0,0]},g3:[0,0],g45:[0,0]};
+for(let h=0;h<18;h++){const x=rd.r&&rd.r[h],sh=x&&x.shots;if(!sh||!sh.length)continue;o.hl++;const par=C[rd.ci].p[h],gi=sh.findIndex(s=>s.res=='G'),gir=gi>=0&&gi+1<=par-2;
+sh.forEach(s=>{if(s.res=='B')o.bk++;if(s.res=='W')o.wt++});
+if(gi>=0||sh.length>=par-2){const t=par==3?o.g3:o.g45;t[1]++;if(gir)t[0]++}
+if(gi>=0&&x.holed){const pl=(x.pl||[]).length,sc=gi+1+pl,df=sc-par;o.cn++;o.st+=sc;o.pr+=par;o.pu+=pl;o.nh++;if(pl==1)o.p1++;if(pl>=3)o.p3++;if(gir){o.pg+=pl;o.ng++}else{o.sa++;if(sc<=par)o.sv++}
+o.d[df<=-2?0:df==-1?1:df==0?2:df==1?3:4]++;o.ps[par][0]+=sc;o.ps[par][1]++}}return o}
+function agg(rds){const a=detail({r:{},ci:0});for(const rd of rds){const o=detail(rd);for(const k in a){if(Array.isArray(a[k]))a[k]=a[k].map((v,i)=>v+o[k][i]);else if(typeof a[k]=='object'){for(const p in a[k])a[k][p]=a[k][p].map((v,i)=>v+o[k][p][i])}else a[k]+=o[k]}}return a}
+function dpanel(rds){const a=agg(rds),pc=(x,y)=>y?Math.round(x/y*100)+'%':'—',av=(x,y)=>y?fm(x/y):'—',df=a.st-a.pr,sg=n=>(n>0?'+':'')+fm(n);
+const T=(l,v,sub)=>`<div class="tile p-3"><div class="mut text-xs">${l}</div><div class="text-xl font-extrabold">${v}</div><div class="mut text-xs">${sub||'&nbsp;'}</div></div>`,tot=a.d.reduce((x,y)=>x+y,0),DL=[['Eagle+','#3b8fd1'],['Birdie','#10b981'],['Par','#8fbf9f'],['Bogey','#e0bf62'],['Doppio+','#f87171']];
+return`<div class="c p-5"><div class="font-bold">Statistiche dettagliate</div><p class="mut text-xs mb-3">${a.cn?`Punteggio e putt sono calcolati su ${a.cn} buche completate (green raggiunto e buca imbucata).`:'Completa almeno una buca (green e imbucata) per vedere punteggio e putt.'}</p>
+<div class="grid grid-cols-2 sm:grid-cols-3 gap-3">${T('Punteggio vs par',a.cn?sg(df):'—',a.cn?a.st+' colpi · par '+a.pr:'')}${T('Media per buca',a.cn?sg(df/a.cn):'—','rispetto al par')}${T('Putt per buca',av(a.pu,a.nh),a.nh?a.pu+' putt totali':'')}${T('Putt per GIR',av(a.pg,a.ng),a.ng?a.ng+' GIR completati':'')}${T('Buche da 1 putt',pc(a.p1,a.nh),a.p1+' buche')}${T('3 putt o più',pc(a.p3,a.nh),a.p3+' buche')}${T('Scrambling',pc(a.sv,a.sa),a.sa?a.sv+'/'+a.sa+' par salvati':'senza GIR mancati')}${T('GIR su par 3',pc(a.g3[0],a.g3[1]),a.g3[1]+' buche')}${T('GIR su par 4/5',pc(a.g45[0],a.g45[1]),a.g45[1]+' buche')}${T('Colpi in bunker',a.bk,'')}${T('Colpi in acqua',a.wt,'penalità')}${T('Media par 3 · 4 · 5',[3,4,5].map(p=>av(a.ps[p][0],a.ps[p][1])).join(' · '),'colpi per buca')}</div>
+${tot?`<div class="font-bold mt-4 mb-1 text-sm">Distribuzione dei risultati</div><div class="flex h-5 rounded-full overflow-hidden" style="background:var(--line)">${a.d.map((v,i)=>v?`<div title="${DL[i][0]}" style="width:${v/tot*100}%;background:${DL[i][1]}"></div>`:'').join('')}</div><div class="flex flex-wrap gap-x-3 text-xs mut mt-1">${a.d.map((v,i)=>`<span><span style="color:${DL[i][1]}">●</span> ${DL[i][0]} ${v}</span>`).join('')}</div>`:''}</div>`}
+function trend(){const rs=U.rounds.filter(r=>r.s.ge||r.s.fe).slice(-8);if(rs.length<2)return'';const W=320,H=110,bw=Math.min(14,W/rs.length/3);
+return`<div class="c p-5"><div class="flex justify-between items-baseline"><b>Andamento round</b><span class="mut text-xs">ultimi ${rs.length}</span></div><svg viewBox="0 0 ${W} ${H+18}" class="w-full mt-2" role="img" aria-label="GIR e FIR per round">${[0,50,100].map(v=>`<line x1="0" x2="${W}" y1="${H-v*H/100}" y2="${H-v*H/100}" stroke="#2b3a34"/><text x="0" y="${H-v*H/100-2}" font-size="8" fill="#9aada3">${v}%</text>`).join('')}${rs.map((r,i)=>{const x=24+i*(W-24)/rs.length;return`<rect x="${x}" y="${H-r.s.gir*H/100}" width="${bw}" height="${r.s.gir*H/100}" fill="#10b981" rx="2"/><rect x="${x+bw+2}" y="${H-r.s.fir*H/100}" width="${bw}" height="${r.s.fir*H/100}" fill="#3b8fd1" rx="2"/><text x="${x+bw}" y="${H+12}" font-size="8" text-anchor="middle" fill="#9aada3">${r.date.slice(0,5)}</text>`}).join('')}</svg><div class="text-xs mut mt-1"><span style="color:#10b981">●</span> GIR <span style="color:#3b8fd1">●</span> FIR</div></div>`}
+/* ---------- AI Coach ---------- */
+const CO={club:'Driver',v:{side:null,front:null},res:null};
+const TI={Avanzato:{sev:-.8,n:'Scala severa (HCP fino a 10): contano punto di impatto, controllo della faccia e ripetibilità.',tips:['Controlla il punto di impatto con lo spray sulla faccia.','Allena le traiettorie a disegno e a ritorno su un bersaglio.']},
+Intermedio:{sev:0,n:'Scala equilibrata (HCP 10,1–20): contano contatto costante e un errore prevedibile.',tips:['Scegli un solo pensiero swing per sessione.','Filmati a ogni allenamento e confronta i video.']},
+Base:{sev:.6,n:'Scala di supporto (HCP 20,1+): prima equilibrio, impugnatura e contatto pieno.',tips:['Prima mezzi swing, poi swing completo.','Prima di ogni palla controlla presa, postura e allineamento.']}};
+const CG={'Driver':'D','Ferro 5':'I','Ferro 7':'I','Ferro 9':'I','Pitching wedge':'W','Wedge / Approccio':'W'};
+const FL={D:[[`Transizione dall'alto verso il basso che crea uno slice.`,`Parti dalle anche verso il bersaglio e lascia cadere il bastone dietro di te.`],[`Palla troppo indietro nella stance: lancio basso.`,`Posizionala in linea col tallone avanti e inclina la schiena lontano dal bersaglio.`],[`Estensione precoce: le anche vanno verso la palla.`,`Tieni i glutei contro un muro o una sedia durante il backswing.`],[`Peso rimasto sul piede dietro all'impatto.`,`Finisci con la cintura verso il bersaglio e il peso sulla gamba avanti.`]],
+I:[[`Punto più basso dietro la palla: colpi grassi.`,`Metti un tee 5 cm davanti alla palla e sfiorala dopo l'impatto.`],[`Polsi che “aiutano” la palla a salire.`,`Polso avanti piatto con l'asta inclinata verso il bersaglio all'impatto.`],[`Faccia aperta in cima al backswing.`,`Controlla che il polso avanti sia piatto o leggermente flesso.`],[`Presa troppo stretta che blocca lo swing.`,`Pressione 4 su 10: lascia oscillare il bastone.`]],
+W:[[`Rallentamento in impatto: colpi grassi o sottili.`,`Backswing più lungo e finale fluido che accelera.`],[`Mani dietro la palla: loft e distanza imprevedibili.`,`Mantieni l'asta inclinata verso il bersaglio all'impatto.`],[`Peso troppo indietro: poco controllo.`,`60% del peso sul piede avanti e mantienilo.`],[`Lunghezza dello swing diversa a ogni colpo.`,`Usa le lunghezze a orologio (7:30, 9:00, 10:30) e annota il carry.`]]};
+const TG={Avanzato:{D:'Obiettivo: dispersione sotto i 25 m e curva controllata a richiesta.',I:'Obiettivo: carry costante entro 5 m e contatto al centro.',W:'Obiettivo: 3 distanze a orologio entro 2 m.'},Intermedio:{D:'Obiettivo: 7 fairway su 14 con un errore sempre dallo stesso lato.',I:'Obiettivo: contatto palla-terra costante in 8 colpi su 10.',W:'Obiettivo: green in regolazione dai 50 m con due distanze fisse.'},Base:{D:'Obiettivo: colpire la palla in aria e restare in campo.',I:'Obiettivo: contatto pulito in 6 colpi su 10.',W:'Obiettivo: portare la palla sul green da 30 m.'}};
+function vid(k,i){const f=i.files[0];if(!f)return;if(CO.v[k]?.url)URL.revokeObjectURL(CO.v[k].url);CO.v[k]={name:f.name,size:f.size,url:URL.createObjectURL(f)};CO.res=null;S.err='';R()}
+function sample(){CO.v={side:{name:'esempio-laterale.mp4',size:1000},front:{name:'esempio-frontale.mp4',size:2000}};CO.res=null;S.err='';R()}
+async function frames(url,n=20){const v=document.createElement('video');v.muted=true;v.playsInline=true;v.src=url;await new Promise((ok,ko)=>{v.onloadedmetadata=ok;v.onerror=ko});const d=v.duration;if(!isFinite(d)||d<=0)throw 0;
+const c=document.createElement('canvas');c.width=c.height=48;const x=c.getContext('2d',{willReadFrequently:true});let prev=null,out=[];
+for(let i=0;i<n;i++){v.currentTime=d*(i+.5)/n;await new Promise(r=>v.onseeked=r);x.drawImage(v,0,0,48,48);const a=x.getImageData(0,0,48,48).data,g=[];for(let j=0;j<a.length;j+=4)g.push((a[j]+a[j+1]+a[j+2])/3);
+if(prev){let s=0,cx=0,w=0;for(let j=0;j<g.length;j++){const df=Math.abs(g[j]-prev[j]);if(df>25){s+=df;cx+=(j%48)*df;w+=df}}out.push({e:s,cx:w?cx/w:null})}prev=g}return out}
+const tempo=o=>{const e=o.map(p=>p.e),mx=Math.max(...e);if(!mx)return null;const a=e.findIndex(v=>v>.25*mx),b=e.length-1-[...e].reverse().findIndex(v=>v>.25*mx),pk=e.indexOf(mx);return(pk-a+1)/Math.max(1,b-pk+1)};
+const sway=o=>{const v=o.map(p=>p.cx).filter(x=>x!=null);if(v.length<4)return null;const mu=v.reduce((a,b)=>a+b)/v.length;return Math.sqrt(v.reduce((a,b)=>a+(b-mu)**2,0)/v.length)/48};
+async function analyse(){const{side,front}=CO.v;if(!side||!front){S.err='Carica entrambi i video: laterale e frontale.';return R()}S.err='';S.busy=true;R();
+let tp=null,sw=null;try{if(side.url)tp=tempo(await frames(side.url))}catch(e){}try{if(front.url)sw=sway(await frames(front.url))}catch(e){}
+const t=tier(),sev=TI[t].sev,k=CO.club;let hs=0;for(const c of k+t+side.name+side.size+front.name+front.size)hs=(hs*31+c.charCodeAt(0))>>>0;
+const rnd=i=>{let x=(hs+i*1013904223)>>>0;x=Math.imul(x^(x>>>15),2246822519)>>>0;x=(x^(x>>>13))>>>0;return x%1000/1000},cl=v=>Math.max(0,Math.min(10,Math.round(v*2)/2));
+const ts=tp==null?null:10-Math.min(10,Math.abs(tp-3)*1.5),ss=sw==null?null:10-Math.min(10,sw*60),b=i=>4.5+rnd(i)*4.5+sev;
+const PH=[['Setup',cl(b(0))],['Backswing',cl(b(1))],['Transizione',cl(ts==null?b(2):(ts+sev+b(2))/2)],['Impatto',cl(ss==null?b(3):(ss+sev+b(3))/2)],['Finale',cl(ss==null?b(4):(ss+sev+b(4))/2)]];
+const overall=Math.round(PH.reduce((a,p)=>a+p[1],0)/5*10)/10,weak=PH.slice().sort((a,b)=>a[1]-b[1])[0][0];
+const faults=FL[CG[k]].map((f,i)=>[rnd(10+i),f]).sort((a,b)=>a[0]-b[0]).slice(0,3).map(x=>x[1]);
+CO.res={overall,PH,faults,t,k,weak,tp,sw};S.busy=false;R()}
+function coach(){const t=tier(),h=`<h2 class="text-3xl font-extrabold">AI Coach</h2>`;
+if(!t)return h+`<div class="c p-5"><p>Inserisci il tuo HCP nel profilo: il coach adatta l'analisi al tuo livello.</p><button class="btn mt-3" onclick="go('profile')">Inserisci HCP</button></div>`;
+const T=TI[t],r=CO.res,up=(k,l)=>{const f=CO.v[k];return`<div class="c p-3"><div class="font-bold mb-2">${l}</div>${f?.url?`<video src="${f.url}" controls playsinline class="w-full rounded-xl mb-2" style="max-height:220px"></video>`:''}${f?`<div class="text-sm mb-2">✓ ${esc(f.name)}</div>`:''}<label class="btn o w-full block cursor-pointer focus-within:ring-2">${f?'Sostituisci video':'Carica video'}<input type="file" accept="video/*" class="sr-only" onchange="vid('${k}',this)"></label></div>`};
+return h+`<div class="pcard p-5"><div class="text-2xl font-extrabold">Livello ${t}</div><div class="sub text-sm">${T.n}</div></div>
+<div class="grid sm:grid-cols-2 gap-3">${up('side','Vista laterale (da dietro)')}${up('front','Vista frontale')}</div>
+<button class="chip" onclick="sample()">Usa clip di esempio</button>
+<label class="block"><span class="mut text-sm">Bastone usato</span><select class="inp" onchange="CO.club=this.value;CO.res=null;R()">${Object.keys(CG).map(c=>`<option ${c==CO.club?'selected':''}>${c}</option>`).join('')}</select></label>
+${S.err?`<div class="err" role="alert">${S.err}</div>`:''}<button class="btn w-full" ${S.busy?'disabled':''} onclick="analyse()">${S.busy?'Analisi in corso…':'Analizza lo swing'}</button>
+${r?`<div class="c p-5 zoomin"><div class="text-center"><div class="mut text-sm">Punteggio swing · livello ${r.t} · ${r.k}</div><div class="text-6xl font-extrabold" style="color:var(--g)">${r.overall}<span class="text-2xl mut">/10</span></div></div><div class="mt-3">${r.PH.map(p=>`<div class="mb-2"><div class="flex justify-between text-sm"><span>${p[0]}</span><b>${p[1]}</b></div><div class="bar"><i style="width:${p[1]*10}%"></i></div></div>`).join('')}</div>
+${r.tp!=null||r.sw!=null?`<div class="font-bold mt-3">Misure dai tuoi video</div><ul class="list-disc pl-5 mut">${r.tp!=null?`<li>Ritmo stimato (salita:discesa) ${r.tp.toFixed(1)}:1, ideale circa 3:1.</li>`:''}${r.sw!=null?`<li>Oscillazione del corpo nel video frontale: ${r.sw<.08?'contenuta':r.sw<.15?'media':'ampia'}.</li>`:''}</ul>`:''}
+<div class="font-bold mt-3">Errori principali con ${r.k}</div><ul class="space-y-2 mt-1">${r.faults.map(f=>`<li><b>${f[0]}</b><br><span class="mut">Correzione: ${f[1]}</span></li>`).join('')}</ul>
+<div class="font-bold mt-3">Da controllare nei video</div><ul class="list-disc pl-5 mut"><li>Laterale: angolo della schiena e piano del bastone nella fase ${r.weak.toLowerCase()}.</li><li>Frontale: testa stabile e trasferimento del peso sul lato avanti.</li></ul>
+<div class="font-bold mt-3">Consigli per il livello ${r.t}</div><ul class="list-disc pl-5 mut"><li>${TG[r.t][CG[r.k]]}</li>${TI[r.t].tips.map(x=>`<li>${x}</li>`).join('')}</ul>
+<p class="text-xs mut mt-3">Analisi indicativa: il ritmo e l'oscillazione sono stimati dal movimento nel video, non è una vera analisi biomeccanica. Il resto del punteggio è un'indicazione per livello e bastone.</p></div>`:''}`}
+
+/* ---------- struttura ---------- */
+function R(){const a=$('#app');if(!U){a.innerHTML=authView();return}
+const T=[['home','🏠','Home'],['train','🏌️','Allenati'],['game','⛳','Gioca'],['cal','📅','Gare'],['coach','🤖','Coach'],['profile','👤','Profilo']];
+const v={home,train,cal,game,coach,profile}[S.tab](),fx=S.fx;S.fx=false;
+a.innerHTML=`<header class="flex justify-between items-center mb-4"><div class="text-2xl font-extrabold" style="color:var(--g)">Golfer</div><button class="chip" onclick="go('profile')">${tier()||'Livello'} · HCP <b>${hc()}</b></button></header><main class="${fx?'fx':''} space-y-4">${v}</main><nav class="nav flex" aria-label="Principale">${T.map(t=>`<button class="${S.tab==t[0]?'on':''}" onclick="go('${t[0]}')"><span>${t[1]}</span>${t[2]}</button>`).join('')}</nav>`}
+R();
+</script></body></html>
